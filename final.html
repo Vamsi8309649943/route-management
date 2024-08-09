@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Management System</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <style>
+        /* General styles */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1em 0;
+            text-align: center;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            padding: 0;
+        }
+
+        nav ul li {
+            margin: 0 15px;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        section {
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        #map {
+            height: 60vh;
+            width: 100%;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Traffic Management System</h1>
+        <nav>
+            <ul>
+                <li><a href="#dashboard">Dashboard</a></li>
+                <li><a href="#routes">Routes</a></li>
+                <li><a href="#alerts">Alerts</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section id="dashboard">
+        <h2 style="color: #4CAF50;">Traffic Dashboard</h2>
+        <p>Real-time traffic updates and alerts.</p>
+        <div id="map"></div>
+    </section>
+
+    <section id="routes">
+        <h2 style="color: #4CAF50;">Plan Your Route</h2>
+        <form id="routeForm">
+            <label for="start">Start:</label>
+            <input type="text" id="start" name="start" placeholder="Enter starting location">
+            <label for="destination">Destination:</label>
+            <input type="text" id="destination" name="destination" placeholder="Enter destination">
+            <button type="button" onclick="findRoute()">Find Route</button>
+        </form>
+        <div id="routeResult"></div>
+    </section>
+
+    <footer id="contact">
+        <p>Contact us at route@map.com</p>
+        <p>© 2024 Route Map</p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script>
+        // Initialize the map
+        var map = L.map('map').setView([20, 78], 5);
+
+        // Load and display the tile layer on the map
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        // Routing control
+        var routingControl = L.Routing.control({
+            waypoints: [],
+            routeWhileDragging: true,
+            createMarker: function() { return null; } // Hide markers
+        }).addTo(map);
+
+        // Geocode address using OpenCage API
+        function geocodeAddress(address, callback) {
+            var apiKey = '4cdee6f3739342e6a437e548fd34b427'; // Your OpenCage API key
+            fetch(`https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(address)}&key=${apiKey}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.results && data.results[0]) {
+                        var location = data.results[0].geometry;
+                        callback(null, L.latLng(location.lat, location.lng));
+                    } else {
+                        callback('Address not found.');
+                    }
+                })
+                .catch(error => callback('Error fetching geocode data.'));
+        }
+
+        // Function to find and display the route
+        function findRoute() {
+            var startAddress = document.getElementById('start').value;
+            var destinationAddress = document.getElementById('destination').value;
+
+            if (!startAddress || !destinationAddress) {
+                alert('Please enter both start and destination addresses.');
+                return;
+            }
+
+            geocodeAddress(startAddress, function (error, startLatLng) {
+                if (error) {
+                    alert(error);
+                    return;
+                }
+                geocodeAddress(destinationAddress, function (error, endLatLng) {
+                    if (error) {
+                        alert(error);
+                        return;
+                    }
+
+                    // Set the waypoints for the route
+                    routingControl.setWaypoints([startLatLng, endLatLng]);
+                    map.setView(startLatLng, 13); // Center map on the start location
+                });
+            });
+        }
+    </script>
+
+</body>
+
+</html>
